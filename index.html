@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>News Digest</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icon.svg" />
+<link rel="manifest" href="manifest.webmanifest" />
+<meta name="theme-color" content="#0f1117" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="News" />
+<style>
+  :root {
+    --bg: #0f1117;
+    --panel: #181b24;
+    --panel-2: #1f2330;
+    --border: #2a2f3d;
+    --text: #e7e9ee;
+    --muted: #9aa3b2;
+    --accent: #4f8cff;
+    --accent-dim: #3a6bd6;
+    --ok: #34c759;
+    --danger: #ff5a5a;
+    --warn: #ffb020;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 24px 16px 100px; }
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 12px; margin-bottom: 14px; flex-wrap: wrap;
+  }
+  h1 { font-size: 22px; margin: 0; }
+  .nowChip {
+    font-size: 12px; color: var(--muted);
+    background: var(--panel-2); border: 1px solid var(--border);
+    border-radius: 999px; padding: 4px 10px;
+    font-variant-numeric: tabular-nums;
+  }
+  /* tabs */
+  .tabs { display: flex; gap: 6px; margin-bottom: 18px; border-bottom: 1px solid var(--border); }
+  .tab {
+    background: none; border: none; color: var(--muted);
+    padding: 10px 14px; font-size: 14px; cursor: pointer;
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 600; }
+  .panel { animation: fade .15s ease; }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .card h2 { font-size: 16px; margin: 0 0 4px; }
+  .card .hint { color: var(--muted); font-size: 12px; margin: 0 0 14px; }
+  .section-label {
+    font-size: 12px; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--muted); margin: 16px 0 8px; font-weight: 600;
+  }
+  .section-label:first-of-type { margin-top: 4px; }
+  select {
+    background: var(--panel-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 14px;
+    width: 100%;
+    font-variant-numeric: tabular-nums;
+  }
+  .slots { display: grid; gap: 10px; }
+  .slot {
+    display: flex; align-items: center; gap: 12px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+  /* Big, unambiguous time display */
+  .slot .timeDisplay {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    min-width: 60px;
+    text-align: center;
+    color: var(--text);
+    letter-spacing: 0.5px;
+  }
+  .slot .timeDisplay.off { color: var(--muted); }
+  .slot select.hourSel {
+    width: auto;
+    flex: 0 0 110px;
+    font-variant-numeric: tabular-nums;
+  }
+  .slot .spacer { flex: 1; }
+  .switch { position: relative; display: inline-block; width: 42px; height: 24px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .track {
+    position: absolute; cursor: pointer; inset: 0;
+    background: #3a3f4d; border-radius: 999px; transition: .2s;
+  }
+  .track:before {
+    content: ""; position: absolute; height: 18px; width: 18px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%; transition: .2s;
+  }
+  .switch input:checked + .track { background: var(--accent); }
+  .switch input:checked + .track:before { transform: translateX(18px); }
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .cat {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+  .cat .lbl { flex: 1; }
+  .btn {
+    background: var(--accent); color: #fff; border: none;
+    border-radius: 8px; padding: 11px 18px; font-size: 14px; font-weight: 600;
+    cursor: pointer;
+  }
+  .btn:hover { background: var(--accent-dim); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+  .btn.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn.ghost:hover { background: var(--panel-2); }
+  .btn.sm { padding: 7px 12px; font-size: 13px; }
+  /* feed */
+  .feed-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .feed-head .meta { font-size: 12px; color: var(--muted); }
+  .feed-text {
+    white-space: pre-wrap; word-break: break-word;
+    font-size: 13.5px; line-height: 1.55;
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 16px;
+  }
+  .feed-text a { color: var(--accent); text-decoration: none; word-break: break-all; }
+  .feed-text a:hover { text-decoration: underline; }
+  details.session { margin-bottom: 10px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); overflow: hidden; }
+  details.session summary { padding: 12px 14px; cursor: pointer; user-select: none; font-weight: 600; font-size: 14px; list-style: none; }
+  details.session summary::-webkit-details-marker { display: none; }
+  details.session summary::before { content: "▸"; display: inline-block; margin-right: 8px; transition: transform .15s; }
+  details.session[open] summary::before { transform: rotate(90deg); }
+  details.session .feed-text { border: none; padding: 4px 14px 14px; }
+  .empty { text-align: center; color: var(--muted); padding: 50px 20px; border: 1px dashed var(--border); border-radius: var(--radius); }
+  .empty .big { font-size: 30px; display: block; margin-bottom: 10px; }
+  .savebar {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: rgba(15,17,23,.92); backdrop-filter: blur(8px);
+    border-top: 1px solid var(--border); padding: 12px 16px;
+  }
+  .savebar .inner { max-width: 760px; margin: 0 auto; display: flex; align-items: center; gap: 12px; justify-content: flex-end; }
+  .status { font-size: 12px; color: var(--muted); margin-right: auto; }
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: var(--panel-2); border: 1px solid var(--border);
+    padding: 10px 16px; border-radius: 8px; font-size: 13px;
+    opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 50;
+  }
+  .toast.show { opacity: 1; }
+  .toast.ok { border-color: var(--ok); }
+  .toast.err { border-color: var(--danger); }
+  .overlay {
+    position: fixed; inset: 0; background: rgba(8,9,13,.85);
+    display: flex; align-items: center; justify-content: center; z-index: 40; padding: 16px;
+  }
+  .overlay .box { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; max-width: 360px; text-align: center; }
+  .overlay .box h2 { margin: 0 0 8px; font-size: 17px; }
+  .overlay .box p { color: var(--muted); font-size: 13px; margin: 0 0 18px; }
+  .muted { color: var(--muted); }
+  .hidden { display: none !important; }
+  .formatBadge {
+    display: inline-block;
+    font-size: 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-left: 8px;
+    font-weight: 500;
+  }
+  @media (max-width: 520px) { .cat-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <h1>📰 News Digest</h1>
+      <div style="display:flex;gap:10px;align-items:center;">
+        <span class="nowChip" id="nowChip">--:--</span>
+        <div id="authSlot"></div>
+      </div>
+    </header>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="world">🌐 World</button>
+      <button class="tab" data-tab="malaysia">🇲🇾 Malaysia</button>
+      <button class="tab" data-tab="settings">⚙️ Settings</button>
+    </nav>
+
+    <!-- WORLD FEED -->
+    <section class="panel" data-panel="world">
+      <div class="feed-head">
+        <span class="meta" data-meta="global">Loading…</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sm" data-copy="global">📋 Copy</button>
+          <button class="btn ghost sm" data-refresh="global">Refresh</button>
+        </div>
+      </div>
+      <div class="feed" data-feed="global"></div>
+    </section>
+
+    <!-- MALAYSIA FEED -->
+    <section class="panel hidden" data-panel="malaysia">
+      <div class="feed-head">
+        <span class="meta" data-meta="malaysia">Loading…</span>
+        <div style="display:flex;gap:6px;">
+          <button class="btn sm" data-copy="malaysia">📋 Copy</button>
+          <button class="btn ghost sm" data-refresh="malaysia">Refresh</button>
+        </div>
+      </div>
+      <div class="feed" data-feed="malaysia"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel hidden" data-panel="settings">
+      <p class="sub muted" style="font-size:13px;margin:0 0 16px;">
+        Times are in <strong>24-hour format</strong> (00:00–23:00) in your selected timezone.
+        Each region (World, Malaysia) has its own send slots and categories.
+      </p>
+
+      <div class="card">
+        <h2>⏰ Timezone</h2>
+        <p class="hint">Applies to all send times below. Current time shown in the header.</p>
+        <select id="tz"></select>
+      </div>
+
+      <div class="card">
+        <h2>🌐 World <span class="formatBadge">24-hour</span></h2>
+        <p class="hint">A World-only digest sends at these times.</p>
+        <div class="section-label">Send times</div>
+        <div class="slots" data-side="global"></div>
+        <div class="section-label">Categories</div>
+        <div class="cat-grid" data-side="global"></div>
+      </div>
+
+      <div class="card">
+        <h2>🇲🇾 Malaysia <span class="formatBadge">24-hour</span></h2>
+        <p class="hint">A Malaysia-only digest sends at these times.</p>
+        <div class="section-label">Send times</div>
+        <div class="slots" data-side="malaysia"></div>
+        <div class="section-label">Categories</div>
+        <div class="cat-grid" data-side="malaysia"></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- SAVE BAR (settings only) -->
+  <div class="savebar hidden" id="savebar">
+    <div class="inner">
+      <span class="status" id="savedAt"></span>
+      <button class="btn ghost sm" id="reloadBtn">Reload</button>
+      <button class="btn" id="saveBtn" disabled>Save</button>
+    </div>
+  </div>
+
+  <!-- SIGN-IN OVERLAY -->
+  <div class="overlay hidden" id="signInOverlay">
+    <div class="box">
+      <h2>Sign in to edit settings</h2>
+      <p>You can read the news without signing in. To change your schedule or categories, sign in with your Google account.</p>
+      <button class="btn" id="overlaySignIn">☁ Sign in with Google</button>
+      <p style="margin:16px 0 0;"><a href="#" id="overlayPreview" class="muted" style="font-size:12px;">Just looking? Preview the controls →</a></p>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Firebase compat SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+
+  <script>
+  // =====================================================================
+  //  FIREBASE CONFIG — same backend, will preserve all existing data
+  // =====================================================================
+  const firebaseConfig = {
+    apiKey: "AIzaSyAjzvsMMde5QwpyUWk1CNFl5TtxqqcHDa4",
+    authDomain: "wing-news-digest-v2.firebaseapp.com",
+    projectId: "wing-news-digest-v2",
+    storageBucket: "wing-news-digest-v2.firebasestorage.app",
+    messagingSenderId: "374736039503",
+    appId: "1:374736039503:web:6cb72031bb5d4f1a77c43a",
+    measurementId: "G-0L5PS21NXY"
+  };
+  const ALLOWED_EMAIL = "wingloon@gmail.com";
+  // =====================================================================
+
+  const CATEGORIES = [
+    { key: "general",       label: "📰 General / Top Stories" },
+    { key: "political",     label: "🏛 Political" },
+    { key: "world",         label: "🌍 World & Geopolitics" },
+    { key: "business",      label: "💰 Business & Economy" },
+    { key: "markets",       label: "📈 Markets & Investing" },
+    { key: "crypto",        label: "🪙 Crypto & Web3" },
+    { key: "tech",          label: "🤖 Tech & AI" },
+    { key: "science",       label: "🔬 Science & Space" },
+    { key: "health",        label: "🏥 Health & Medicine" },
+    { key: "environment",   label: "🌱 Environment & Climate" },
+    { key: "property",      label: "🏠 Property & Real Estate" },
+    { key: "auto",          label: "🚗 Automotive" },
+    { key: "education",     label: "🎓 Education" },
+    { key: "entertainment", label: "🎬 Entertainment / Lifestyle" },
+    { key: "sports",        label: "⚽ Sports" },
+    { key: "travel",        label: "✈️ Travel" }
+  ];
+  const CAT_LABEL = CATEGORIES.reduce((o, c) => (o[c.key] = c.label, o), {});
+
+  const SIDES = ["global", "malaysia"];
+  const FEED_DOC = { global: "feed_global", malaysia: "feed_malaysia" };
+  const SLOTS_PER_REGION = 3;
+
+  const TIMEZONES = [
+    "Asia/Kuala_Lumpur","Asia/Singapore","Asia/Jakarta","Asia/Bangkok",
+    "Asia/Hong_Kong","Asia/Tokyo","Asia/Shanghai","Asia/Dubai",
+    "Europe/London","Europe/Paris","America/New_York","America/Los_Angeles",
+    "Australia/Sydney","UTC"
+  ];
+
+  // 24-hour format. h is 0..23.
+  function hh(h) { return (h < 10 ? "0" : "") + h + ":00"; }
+
+  function defaultConfig() {
+    const cats = () => CATEGORIES.reduce((o, c) => (o[c.key] = true, o), {});
+    const slots = () => [
+      { enabled: true,  hour: 9 },
+      { enabled: false, hour: 13 },
+      { enabled: false, hour: 21 }
+    ];
+    return {
+      timezone: "Asia/Kuala_Lumpur",
+      regions: {
+        global:   { slots: slots(), categories: cats() },
+        malaysia: { slots: slots(), categories: cats() }
+      }
+    };
+  }
+
+  // ---- App state ----
+  let db, auth, user = null;
+  let config = defaultConfig();
+  let dirty = false;
+  let activeTab = "world";
+  let feedText = { global: "", malaysia: "" };
+
+  const $ = (id) => document.getElementById(id);
+
+  function toast(msg, kind) {
+    const t = $("toast");
+    t.textContent = msg;
+    t.className = "toast show " + (kind || "");
+    setTimeout(() => (t.className = "toast"), 2600);
+  }
+  function setDirty(v) {
+    dirty = v;
+    $("saveBtn").disabled = !v || !user;
+  }
+  function esc(s) {
+    return String(s == null ? "" : s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  // ---- Now chip (header) ----
+  function updateNowChip() {
+    try {
+      const tz = (config && config.timezone) || "Asia/Kuala_Lumpur";
+      const d = new Date();
+      const f = new Intl.DateTimeFormat("en-GB", {
+        timeZone: tz, hour: "2-digit", minute: "2-digit", hour12: false
+      });
+      $("nowChip").textContent = "Now: " + f.format(d) + " " + tz.split("/").pop().replace(/_/g, " ");
+    } catch (e) {
+      $("nowChip").textContent = "";
+    }
+  }
+  setInterval(updateNowChip, 30000); // refresh every 30s
+
+  // ---- Tabs ----
+  function switchTab(tab) {
+    activeTab = tab;
+    document.querySelectorAll(".tab").forEach((b) =>
+      b.classList.toggle("active", b.dataset.tab === tab));
+    document.querySelectorAll(".panel").forEach((p) =>
+      p.classList.toggle("hidden", p.dataset.panel !== tab));
+    $("savebar").classList.toggle("hidden", tab !== "settings");
+    if (tab === "settings" && !user) $("signInOverlay").classList.remove("hidden");
+    else $("signInOverlay").classList.add("hidden");
+  }
+
+  // ---- Settings render ----
+  function renderTimezones() {
+    const sel = $("tz");
+    sel.innerHTML = "";
+    TIMEZONES.forEach((tz) => {
+      const o = document.createElement("option");
+      o.value = tz; o.textContent = tz.replace(/_/g, " ");
+      sel.appendChild(o);
+    });
+    sel.value = config.timezone;
+    sel.onchange = () => { config.timezone = sel.value; setDirty(true); updateNowChip(); };
+  }
+
+  function renderSlots(side) {
+    const host = document.querySelector(`.slots[data-side="${side}"]`);
+    host.innerHTML = "";
+    config.regions[side].slots.forEach((slot) => {
+      const row = document.createElement("div");
+      row.className = "slot";
+
+      // BIG TIME DISPLAY — unambiguous, no slot-number confusion
+      const display = document.createElement("span");
+      display.className = "timeDisplay" + (slot.enabled ? "" : " off");
+      display.textContent = hh(slot.hour);
+
+      // Hour picker (24-hour values 00:00..23:00)
+      const hourSel = document.createElement("select");
+      hourSel.className = "hourSel";
+      for (let h = 0; h < 24; h++) {
+        const o = document.createElement("option");
+        o.value = h;
+        o.textContent = hh(h);
+        hourSel.appendChild(o);
+      }
+      hourSel.value = slot.hour;
+      hourSel.disabled = !slot.enabled;
+      hourSel.onchange = () => {
+        slot.hour = parseInt(hourSel.value, 10);
+        display.textContent = hh(slot.hour);
+        setDirty(true);
+      };
+
+      const spacer = document.createElement("span");
+      spacer.className = "spacer";
+
+      // Enable/disable switch
+      const sw = document.createElement("label");
+      sw.className = "switch";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = slot.enabled;
+      cb.onchange = () => {
+        slot.enabled = cb.checked;
+        hourSel.disabled = !cb.checked;
+        display.classList.toggle("off", !cb.checked);
+        setDirty(true);
+      };
+      const track = document.createElement("span");
+      track.className = "track";
+      sw.appendChild(cb); sw.appendChild(track);
+
+      row.appendChild(display);
+      row.appendChild(hourSel);
+      row.appendChild(spacer);
+      row.appendChild(sw);
+      host.appendChild(row);
+    });
+  }
+
+  function renderCategories(side) {
+    const grid = document.querySelector(`.cat-grid[data-side="${side}"]`);
+    grid.innerHTML = "";
+    CATEGORIES.forEach((c) => {
+      const cell = document.createElement("div");
+      cell.className = "cat";
+      const lbl = document.createElement("span");
+      lbl.className = "lbl"; lbl.textContent = c.label;
+      const sw = document.createElement("label");
+      sw.className = "switch";
+      const cb = document.createElement("input");
+      cb.type = "checkbox";
+      cb.checked = !!config.regions[side].categories[c.key];
+      cb.onchange = () => { config.regions[side].categories[c.key] = cb.checked; setDirty(true); };
+      const track = document.createElement("span");
+      track.className = "track";
+      sw.appendChild(cb); sw.appendChild(track);
+      cell.appendChild(lbl); cell.appendChild(sw);
+      grid.appendChild(cell);
+    });
+  }
+  function renderSettings() {
+    renderTimezones();
+    SIDES.forEach((s) => { renderSlots(s); renderCategories(s); });
+    updateNowChip();
+  }
+
+  // ---- Feed render ----
+  function renderFeedSessions(items) {
+    return items.map((it, i) => {
+      const when = it.updatedAt && it.updatedAt.toDate
+        ? it.updatedAt.toDate().toLocaleString()
+        : (typeof it.updatedAt === "string" ? it.updatedAt : "");
+      const label = it.label || "Digest";
+      const head = esc(label) + (when ? ` <span class="muted">· ${esc(when)}</span>` : "");
+      let body = esc(it.text || "");
+      body = body.replace(/(https?:\/\/[^\s]+)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+      return `<details class="session"${i === 0 ? " open" : ""}>
+        <summary>${head}</summary>
+        <div class="feed-text">${body}</div>
+      </details>`;
+    }).join("");
+  }
+  function emptyHTML(msg) {
+    return `<div class="empty"><span class="big">🗞️</span>${esc(msg)}</div>`;
+  }
+
+  async function loadFeed(region) {
+    const host = document.querySelector(`.feed[data-feed="${region}"]`);
+    const meta = document.querySelector(`.meta[data-meta="${region}"]`);
+    if (!db) { host.innerHTML = emptyHTML("Connecting…"); return; }
+    try {
+      const snap = await db.collection("newsDigest").doc(FEED_DOC[region]).get();
+      const d = snap.exists ? snap.data() : null;
+      let items = [];
+      if (d) {
+        if (Array.isArray(d.items)) items = d.items;
+        else if (typeof d.text === "string" && d.text.trim()) items = [{ label: d.label, updatedAt: d.updatedAt, text: d.text }];
+      }
+      if (!items.length) {
+        feedText[region] = "";
+        host.innerHTML = emptyHTML("No digest yet. Your news will appear here after the next scheduled send.");
+        meta.textContent = "";
+        return;
+      }
+      feedText[region] = items[0].text || "";
+      host.innerHTML = renderFeedSessions(items);
+      const latestWhen = items[0].updatedAt && items[0].updatedAt.toDate ? items[0].updatedAt.toDate().toLocaleString() : "";
+      const latestLabel = items[0].label || "";
+      meta.textContent = (latestLabel ? latestLabel + " · " : "") + (latestWhen ? "Latest: " + latestWhen : "") + " · " + items.length + " session" + (items.length === 1 ? "" : "s") + " kept";
+    } catch (e) {
+      console.error(e);
+      host.innerHTML = emptyHTML("Couldn't load news: " + (e.code || e.message));
+      meta.textContent = "";
+    }
+  }
+  function loadAllFeeds() { SIDES.forEach(loadFeed); }
+
+  function fallbackCopy(t, done, fail) {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = t; ta.style.position = "fixed"; ta.style.left = "-9999px";
+      document.body.appendChild(ta); ta.focus(); ta.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(ta);
+      ok ? done() : fail();
+    } catch (e) { fail(); }
+  }
+  function copyFeed(region) {
+    const t = feedText[region];
+    if (!t || !t.trim()) { toast("Nothing to copy yet", ""); return; }
+    const done = () => toast("Copied to clipboard", "ok");
+    const fail = () => toast("Copy failed — long-press the text instead", "err");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t).then(done).catch(() => fallbackCopy(t, done, fail));
+    } else {
+      fallbackCopy(t, done, fail);
+    }
+  }
+
+  function renderAuth() {
+    const slot = $("authSlot");
+    slot.innerHTML = "";
+    if (user) {
+      const b = document.createElement("button");
+      b.className = "btn ghost sm"; b.textContent = "Sign out"; b.title = user.email;
+      b.onclick = () => auth.signOut();
+      slot.appendChild(b);
+      $("signInOverlay").classList.add("hidden");
+    } else {
+      const b = document.createElement("button");
+      b.className = "btn sm"; b.textContent = "☁ Sign in"; b.onclick = signIn;
+      slot.appendChild(b);
+      if (activeTab === "settings") $("signInOverlay").classList.remove("hidden");
+    }
+    $("saveBtn").disabled = !dirty || !user;
+  }
+
+  // ---- Firebase ----
+  function docRef() { return db.collection("newsDigest").doc("config"); }
+
+  async function loadConfig() {
+    try {
+      const snap = await docRef().get();
+      if (snap.exists && snap.data()) {
+        config = mergeConfig(snap.data());
+        const ts = snap.data().updatedAt;
+        $("savedAt").textContent = ts && ts.toDate ? "Last saved " + ts.toDate().toLocaleString() : "";
+      } else {
+        config = defaultConfig();
+        $("savedAt").textContent = "No settings saved yet — defaults shown.";
+      }
+      renderSettings();
+      setDirty(false);
+    } catch (e) {
+      console.error(e);
+      toast("Couldn't load settings: " + (e.code || e.message), "err");
+    }
+  }
+  function mergeConfig(d) {
+    const base = defaultConfig();
+    const out = { timezone: d.timezone || base.timezone, regions: {} };
+    SIDES.forEach((side) => {
+      const src = (d.regions && d.regions[side]) || {};
+      const baseSlots = base.regions[side].slots;
+      let slots;
+      if (Array.isArray(src.slots) && src.slots.length === SLOTS_PER_REGION) {
+        slots = src.slots.map((s, i) => ({
+          enabled: s.enabled !== false,
+          hour: Number.isInteger(s.hour) ? Math.max(0, Math.min(23, s.hour)) : baseSlots[i].hour
+        }));
+      } else {
+        slots = baseSlots;
+      }
+      const categories = {};
+      CATEGORIES.forEach((c) => {
+        const v = src.categories && src.categories[c.key];
+        categories[c.key] = v !== undefined ? !!v : true;
+      });
+      out.regions[side] = { slots, categories };
+    });
+    return out;
+  }
+  async function saveConfig() {
+    if (!user) return;
+    $("saveBtn").disabled = true;
+    try {
+      await docRef().set({
+        timezone: config.timezone,
+        regions: config.regions,
+        updatedBy: user.email,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      setDirty(false);
+      $("savedAt").textContent = "Last saved " + new Date().toLocaleString();
+      toast("Settings saved", "ok");
+    } catch (e) {
+      console.error(e);
+      $("saveBtn").disabled = false;
+      toast("Save failed: " + (e.code || e.message), "err");
+    }
+  }
+  async function signIn() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    try { await auth.signInWithPopup(provider); }
+    catch (e) { toast("Sign-in failed: " + (e.code || e.message), "err"); }
+  }
+
+  function init() {
+    firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
+
+    auth.onAuthStateChanged(async (u) => {
+      if (u && (u.email || "").toLowerCase() !== ALLOWED_EMAIL) {
+        toast("That account is not authorised", "err");
+        await auth.signOut();
+        return;
+      }
+      user = u || null;
+      renderAuth();
+      if (user) await loadConfig();
+    });
+
+    // wiring
+    document.querySelectorAll(".tab").forEach((b) =>
+      b.onclick = () => switchTab(b.dataset.tab));
+    document.querySelectorAll("[data-refresh]").forEach((b) =>
+      b.onclick = () => loadFeed(b.dataset.refresh));
+    document.querySelectorAll("[data-copy]").forEach((b) =>
+      b.onclick = () => copyFeed(b.dataset.copy));
+
+    renderSettings();
+    renderAuth();
+    loadAllFeeds();
+    updateNowChip();
+
+    $("saveBtn").onclick = saveConfig;
+    $("reloadBtn").onclick = loadConfig;
+    $("overlaySignIn").onclick = signIn;
+    $("overlayPreview").onclick = (e) => {
+      e.preventDefault();
+      $("signInOverlay").classList.add("hidden");
+      $("savedAt").textContent = "Preview mode — sign in to save.";
+      toast("Preview only — changes won't save yet", "");
+    };
+
+    window.addEventListener("beforeunload", (e) => {
+      if (dirty && user) { e.preventDefault(); e.returnValue = ""; }
+    });
+  }
+
+  init();
+  </script>
+</body>
+</html>
