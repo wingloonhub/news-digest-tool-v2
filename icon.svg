@@ -1,23 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <!-- Rounded dark background (matches app theme) -->
+  <!-- Dark rounded background -->
   <rect width="512" height="512" rx="96" fill="#0f1117"/>
-  <!-- Inner padding for maskable safe area: actual content stays inside 410x410 centered -->
-  <g>
-    <!-- Newspaper body -->
-    <rect x="76" y="118" width="360" height="288" rx="20" fill="#4f8cff"/>
-    <!-- Newspaper "fold" highlight -->
-    <rect x="76" y="118" width="360" height="40" rx="20" fill="#6ba0ff"/>
-    <!-- Headline -->
-    <rect x="116" y="178" width="200" height="36" rx="6" fill="#ffffff"/>
-    <!-- Sub-headline -->
-    <rect x="116" y="226" width="160" height="14" rx="4" fill="#ffffff" opacity="0.85"/>
-    <!-- Body lines -->
-    <rect x="116" y="258" width="280" height="12" rx="4" fill="#ffffff" opacity="0.75"/>
-    <rect x="116" y="280" width="280" height="12" rx="4" fill="#ffffff" opacity="0.75"/>
-    <rect x="116" y="302" width="240" height="12" rx="4" fill="#ffffff" opacity="0.75"/>
-    <rect x="116" y="334" width="280" height="12" rx="4" fill="#ffffff" opacity="0.75"/>
-    <rect x="116" y="356" width="200" height="12" rx="4" fill="#ffffff" opacity="0.75"/>
-    <!-- Small image placeholder block (top right) -->
-    <rect x="336" y="178" width="64" height="60" rx="6" fill="#ffffff" opacity="0.4"/>
-  </g>
+
+  <!-- Bold "N" letter built from 3 shapes -->
+  <!-- Left vertical stroke -->
+  <rect x="120" y="100" width="64" height="312" fill="#4f8cff"/>
+  <!-- Diagonal stroke (parallelogram) -->
+  <polygon points="184,100 248,100 392,412 328,412" fill="#4f8cff"/>
+  <!-- Right vertical stroke -->
+  <rect x="328" y="100" width="64" height="312" fill="#4f8cff"/>
+
+  <!-- Red accent stripe below — gives it a "news brand" feel -->
+  <rect x="120" y="440" width="272" height="14" rx="7" fill="#ff5a5a"/>
 </svg>
