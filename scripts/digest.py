@@ -212,6 +212,25 @@ def write_feed_items(region_key: str, items: list):
         print(f"Firestore PATCH failed: HTTP {r.status_code} — {r.text[:200]}", file=sys.stderr)
 
 
+def already_done_this_hour(region_key: str, hour: int) -> bool:
+    """Dedup: skip if newest item in feed is from today + same local hour.
+    Needed because GitHub Actions multi-cron fires up to 3x per hour."""
+    items = get_feed_items(region_key)
+    if not items:
+        return False
+    newest = items[0]
+    newest_ts = newest.get("mapValue", {}).get("fields", {}).get("updatedAt", {}).get("timestampValue", "")
+    if not newest_ts:
+        return False
+    try:
+        ts_utc = datetime.fromisoformat(newest_ts.replace("Z", "+00:00"))
+        ts_local = ts_utc.astimezone(TZ)
+        now_local = datetime.now(TZ)
+        return ts_local.date() == now_local.date() and ts_local.hour == hour
+    except Exception:
+        return False
+
+
 # ============================================================
 #  RSS FETCH + FILTER
 # ============================================================
@@ -273,6 +292,35 @@ def fetch_stories(region_key: str, enabled_categories: list[str]) -> dict:
 # ============================================================
 #  DIGEST BUILD
 # ============================================================
+# Traffic-light impact classifier. Picks 🟢 (positive), 🔴 (negative) or
+# 🟡 (neutral/mixed) from the headline + summary. Never returns ⚪ white.
+_POS_WORDS = (
+    "surge", "soar", "jump", "rally", "record", "gain", "gains", "rise", "rises",
+    "boost", "win", "wins", "won", "beat", "beats", "growth", "grows", "profit",
+    "approve", "approved", "deal", "agree", "agreement", "recovery", "rebound",
+    "breakthrough", "launch", "expand", "upgrade", "success", "milestone",
+    "invest", "investment", "partnership", "award", "celebrate", "high", "top",
+)
+_NEG_WORDS = (
+    "dies", "die", "death", "killed", "kill", "fire", "crash", "attack", "strike",
+    "war", "conflict", "drop", "fall", "falls", "plunge", "slump", "loss", "losses",
+    "cut", "cuts", "ban", "warning", "warn", "fear", "fears", "crisis", "shortage",
+    "decline", "slows", "weak", "outflow", "fraud", "scandal", "protest", "clash",
+    "arrest", "injured", "victim", "collapse", "recession", "layoff", "default",
+    "tension", "tensions", "threat", "sanction", "delay", "probe", "lawsuit", "row",
+)
+
+def classify_impact(title: str, summary: str) -> str:
+    text = f"{title} {summary}".lower()
+    pos = sum(1 for w in _POS_WORDS if w in text)
+    neg = sum(1 for w in _NEG_WORDS if w in text)
+    if neg > pos:
+        return "🔴"
+    if pos > neg:
+        return "🟢"
+    return "🟡"  # neutral / mixed — never ⚪
+
+
 def build_digest(region_key: str, hour: int, stories_by_cat: dict) -> tuple[str, str]:
     label = "WORLD" if region_key == "global" else "MALAYSIA"
     h12 = hour % 12 or 12
@@ -297,7 +345,7 @@ def build_digest(region_key: str, hour: int, stories_by_cat: dict) -> tuple[str,
             lines.append(f"{i}. {s['title']}")
             if s["summary"]:
                 lines.append(s["summary"])
-            lines.append(f"⚪ Impact | 📰 {s['source']} | 📅 {s['date']}")
+            lines.append(f"{classify_impact(s['title'], s['summary'])} Impact | 📰 {s['source']} | 📅 {s['date']}")
             lines.append(f"🔗 {s['url']}")
             lines.append("──────────")
         lines.append("")
@@ -385,6 +433,10 @@ def main():
             continue
         if not enabled_cats:
             print(f"  {region_key}: due but no categories enabled, skip")
+            continue
+
+        if already_done_this_hour(region_key, hour):
+            print(f"  {region_key}: DUE but already sent at H={hour} today (dedup), skip")
             continue
 
         print(f"  {region_key}: DUE — fetching {len(enabled_cats)} categories")
